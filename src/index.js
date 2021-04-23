@@ -1,22 +1,35 @@
 'use strict';
-const {DateTime} = require('luxon');
 const fs = require('fs');
+const {DateTime} = require('luxon');
+const path = require('path');
 
-const FILE_TO_CHECK = './inputs/__FILE__';
+const filesDir = './inputs/';
 
+/**
+ * Main fonction
+ */
 const main = () => {
-    let file;
+    const filesList = fs.readdirSync(filesDir);
 
-    file = fs.readFileSync(FILE_TO_CHECK, {encoding: 'utf8'});
-    file = file.split(/\r?\n/);
+    for (const filename of filesList) {
+        const extension = path.extname(filename);
 
-    file = browseFile(file);
+        if (filename === '.gitkeep' || extension !== '.ics') {
+            console.error(`The file ${filename} was ignored`);
+            continue;
+        }
 
-    fs.writeFileSync('./calendar.ics', file);
+        console.log(`Working on file ${filename}`);
+        let fileContent = fs.readFileSync(filesDir + filename, {encoding: 'utf8'});
+        fileContent = fileContent.split(/\r?\n/);
+        fileContent = browseFile(fileContent);
+        console.log(`End of file ${filename}`);
+        fs.writeFileSync(`${filesDir}new-${filename}`, fileContent);
+    }
 };
 
 /**
- * Analyse de la ligne et exécution de l'action
+ * Analyse the line and exec action
  * @param {string} line
  * @param {object} parameters
  * @returns {object}
@@ -44,7 +57,7 @@ const lineAnalyse = (line, parameters) => {
                 const eventName = parameters.currentEvent.find(e => e.startsWith('SUMMARY')).split(':');
                 const eventDate = parameters.currentEvent.find(e => e.startsWith('DTSTART')).split(':');
                 const eventFormatedDate = DateTime.fromISO(eventDate[1]);
-                console.log(`Suppression de l'évenement ${eventName[1]} (${eventFormatedDate.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS)})`);
+                console.log(`Delete event "${eventName[1]} (${eventFormatedDate.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS)})"`);
 
                 parameters.skipCurrent = false;
             }
@@ -71,8 +84,8 @@ const checkEndBeginFile = (line, parameters) => {
 };
 
 /**
- * Parcours du fichier
- * @param {string} file
+ * Browse the current file
+ * @param {string[]} file
  */
 const browseFile = file => {
     let parameters = {
@@ -83,7 +96,6 @@ const browseFile = file => {
         limitDate: DateTime.now().minus({year: 1}).set({hour: 0, minute: 0, second: 0, millisecond: 0})
     };
 
-    // Parcours du fichier
     for (let line of file) {
         parameters = lineAnalyse(line, parameters);
     }
