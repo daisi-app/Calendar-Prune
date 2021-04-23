@@ -3,13 +3,14 @@ const fs = require('fs');
 const {DateTime} = require('luxon');
 const path = require('path');
 
-const filesDir = './inputs/';
+const FILESDIR = './inputs/';
+const YEARS_TO_KEEP = 1;
 
 /**
  * Main fonction
  */
 const main = () => {
-    const filesList = fs.readdirSync(filesDir);
+    const filesList = fs.readdirSync(FILESDIR);
 
     for (const filename of filesList) {
         const extension = path.extname(filename);
@@ -20,11 +21,11 @@ const main = () => {
         }
 
         console.log(`Working on file ${filename}`);
-        let fileContent = fs.readFileSync(filesDir + filename, {encoding: 'utf8'});
+        let fileContent = fs.readFileSync(FILESDIR + filename, {encoding: 'utf8'});
         fileContent = fileContent.split(/\r?\n/);
         fileContent = browseFile(fileContent);
         console.log(`End of file ${filename}`);
-        fs.writeFileSync(`${filesDir}new-${filename}`, fileContent);
+        fs.writeFileSync(`${FILESDIR}new-${filename}`, fileContent);
     }
 };
 
@@ -93,7 +94,7 @@ const browseFile = file => {
         currentEvent: [],
         beginFileFinish: false,
         skipCurrent: false,
-        limitDate: DateTime.now().minus({year: 1}).set({hour: 0, minute: 0, second: 0, millisecond: 0})
+        limitDate: DateTime.now().minus({year: YEARS_TO_KEEP}).set({hour: 0, minute: 0, second: 0, millisecond: 0})
     };
 
     for (let line of file) {
